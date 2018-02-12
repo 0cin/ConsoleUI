@@ -6,6 +6,7 @@
 
 #define signals public
 #define slots	public
+#define emit    
 
 namespace sweet {
 
@@ -42,6 +43,11 @@ namespace sweet {
 	template <class FuncType>
 	class SlotImplT : public SlotImpl {
 	public:
+		// 与这个槽连接的信号
+		std::weak_ptr<SignalImpl<SlotImplT>>	signal;
+		// 回调函数
+		std::function<FuncType>					callback;
+
 		SlotImplT(const std::weak_ptr<SignalImpl<SlotImplT>>& signal, const std::function<FuncType>& callback)
 			: signal(signal)
 			, callback(callback) {
@@ -63,11 +69,6 @@ namespace sweet {
 				}
 			}
 		}
-
-		// 与这个槽连接的信号
-		std::weak_ptr<SignalImpl<SlotImplT>>	signal;
-		// 回调函数
-		std::function<FuncType>					callback;
 	};
 
 	// 槽
@@ -97,6 +98,9 @@ namespace sweet {
 	template<class FuncType>
 	class Signal
 	{
+	private:
+		std::shared_ptr<SignalImpl<SlotImplT<FuncType>>> impl;
+
 	public:
 		Signal() : impl(std::make_shared<SignalImpl<SlotImplT<FuncType>>>()) {}
 
@@ -133,8 +137,5 @@ namespace sweet {
 		{
 			return connect(bind_member(instance, func));
 		}
-
-	private:
-		std::shared_ptr<SignalImpl<SlotImplT<FuncType>>> impl;
 	};
 }

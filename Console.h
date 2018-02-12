@@ -58,6 +58,7 @@ namespace sweet {
 			static void			DrawRectAbs(
 									const Rect &rect,
 									StreamBase<wchar_t>& borderStream,
+									StreamBase<wchar_t>& vBorderStream,
 									StreamBase<wchar_t>& blankStream,
 									StreamBase<Color>&   penStream,
 									StreamBase<Color>&   brushStream,
@@ -321,6 +322,7 @@ namespace sweet {
 		void tool::DrawRectAbs(
 			const Rect &rect,
 			StreamBase<wchar_t>& borderStream,
+			StreamBase<wchar_t>& vBorderStream,
 			StreamBase<wchar_t>& blankStream,
 			StreamBase<Color>&   penStream,
 			StreamBase<Color>&   brushStream,
@@ -360,7 +362,7 @@ namespace sweet {
 
 			std::wstring
 					strBorder{ GetStringFromStream(borderStream, numBorderBlock) },		// ±ß¿ò×Ö·û´®(ÐÐ)
-					strBorderSide{ GetStringFromStream(borderStream, borderWidth) },	// ±ß¿ò×Ö·û´®(Ò»±ß)
+					strBorderSide{ GetStringFromStream(vBorderStream, borderWidth) },	// ±ß¿ò×Ö·û´®(Ò»±ß)
 					strBlank{ GetStringFromStream(blankStream, numBlankBlock) };		// ÄÚ²¿×Ö·û´®
 
 			if (0 != numBorderFill) { // ±ß¿òÐèÒªÌî²¹

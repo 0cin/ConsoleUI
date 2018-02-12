@@ -18,6 +18,7 @@ namespace sweet {
 		class Frame : public Object {
 		private:
 			short							_borderWidth;	// ±ß¿ò¿í¶È
+			Bucket							_vBorder;		// ÊúÁÐ±ß¿ò
 			Bucket							_border,		// ±ß¿ò×Ö·ûÁ÷
 											_blank;			// Ìî³ä×Ö·ûÁ÷
 			TinyBucket						_fixer;			// Ìî²¹×Ö·ûÁ÷
@@ -30,6 +31,7 @@ namespace sweet {
 				Rect	rect = Rect(0, 0, 5, 5),						// ±ß½ç¾ØÐÎ
 				short	borderWidth = 1,								// ±ß¿ò¿í¶È
 				Bucket	border = Bucket(makeLpStream(L'*')),			// ±ß¿ò×Ö·ûÁ÷
+				Bucket  vborder = Bucket(makeLpStream(L'*')),			// ÊúÁÐ±ß¿ò×Ö·ûÁ÷
 				Bucket	blank = Bucket(makeLpStream(L' ')),				// Ìî³ä×Ö·ûÁ÷
 				Pen		pen = Pen(makeLpStream(unsigned char(WHITE))),	// »­±Ê(ÑÕÉ«Á÷)
 				Pen		brush = Pen(makeLpStream(unsigned char(WHITE)))	// »­Ë¢(ÑÕÉ«Á÷)
@@ -37,6 +39,7 @@ namespace sweet {
 				: Object(rect, parent)
 				, _borderWidth(borderWidth)
 				, _border(border)
+				, _vBorder(vborder)
 				, _blank(blank)
 				, _fixer(makeLpStream(' '))
 				, _pen(pen)
@@ -86,6 +89,7 @@ namespace sweet {
 					sensePoint, { sensePoint.x() + len, sensePoint.y() + wid },
 				}
 				, *_border.chrs()
+				, *_vBorder.chrs()
 				, *_blank.chrs()
 				, *_pen.color()
 				, *_brush.color()

@@ -32,6 +32,7 @@ namespace sweet {
 				Pen     fPenb = Pen(makeLpStream(cast2UChr(BLACK))),		// ×Ö·û±³¾°
 				short	borderWidth = 1,									// ±ß¿ò¿í¶È
 				Bucket	border = Bucket(makeLpStream(L'*')),				// ±ß¿ò×Ö·ûÁ÷
+				Bucket	vBorder = Bucket(makeLpStream(L'*')),				// ÊúÁÐ±ß¿ò×Ö·ûÁ÷
 				Bucket	blank = Bucket(makeLpStream(L' ')),					// Ìî³ä×Ö·ûÁ÷
 				Pen		penBr = Pen(makeLpStream(cast2UChr(WHITE))),		// »­±Ê(ÑÕÉ«Á÷)
 				Pen		brushBk = Pen(makeLpStream(cast2UChr(WHITE)))		// »­Ë¢(ÑÕÉ«Á÷)
@@ -41,6 +42,7 @@ namespace sweet {
 					, pos
 					, borderWidth
 					, border
+					, vBorder
 					, blank
 					, penBr
 					, brushBk

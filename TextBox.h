@@ -1,13 +1,14 @@
 #pragma once
 
+#include <stack>
 #include <cctype>
 #include <vector>
 #include <string>
 #include <codecvt>
 #include <Paint.h>
 #include <Object.h>
-#include <Controller.h>
 #include <ScrollFrame.h>
+#include <InputController.h>
 
 namespace sweet {
 	namespace cmd {
@@ -16,9 +17,6 @@ namespace sweet {
 		private:
 			std::vector<std::wstring>
 							_textTable;
-			std::wstring	_text;		// 字符串
-			std::vector<bool>
-							_lineFix;	// 行填补
 			InputController _ctrl;		// 读取控制装置
 			std::unique_ptr<ScrollBar>	// y轴平行移动装置
 							_yScroller;
@@ -35,6 +33,7 @@ namespace sweet {
 		slots:
 			sweet::Slot slot_CharRecv;
 			sweet::Slot slot_FinishRecv;
+			sweet::Slot slot_RectChanged;
 
 		public:
 			TextBox(
@@ -42,19 +41,21 @@ namespace sweet {
 				Rect	rect = Rect(0, 0, 5, 5),						// 边界矩形
 				short	borderWidth = 1,								// 边框宽度
 				Bucket	border = Bucket(makeLpStream(L'*')),			// 边框字符流
+				Bucket	vBorder = Bucket(makeLpStream(L'*')),			// 竖列边框字符流
 				Bucket	blank = Bucket(makeLpStream(L' ')),				// 填充字符流
 				Pen		pen = Pen(makeLpStream(unsigned char(WHITE))),	// 画笔(颜色流)
 				Pen		brush = Pen(makeLpStream(unsigned char(WHITE)))	// 画刷(颜色流)
 			)
-				: Frame(parent, rect, borderWidth, border, blank, pen, brush)
+				: Frame(parent, rect, borderWidth, border,vBorder, blank, pen, brush)
 				, _yScroller(nullptr)
 				, _xScroller(nullptr)
 				, _textColor(makeLpStream(cast2UChr(WHITE)))
 				, _length(0)
 			{
-				_cursor = getPrintableCrood();
+				moveCursor2Start();	// 移动光标至开始处
 				slot_CharRecv = _ctrl.sig_CharRecv.connect(this, &TextBox::treatNextChar);
 				slot_FinishRecv = _ctrl.sig_RecvFinish.connect(this, &TextBox::receiveFinish);
+				slot_RectChanged = sig_SetRect.connect(this, &TextBox::adaptRect);
 			}
 			
 			/*void setText(const std::wstring& p);*/
@@ -71,15 +72,13 @@ namespace sweet {
 			}
 			void startInput() { 
 				tool::SetCursorVisible(true);	// 设置光标可见
-				if(_text.empty())
-					moveCursor2Start();	// 光标移动至起点
 				_ctrl.go();		// 开始监听按钮
 			}
 			void finishInput() { 
 				tool::SetCursorVisible(false);	// 隐藏光标
 				_ctrl.pause();	// 停止监听按钮
-				sig_TypeFinished(this);
-				//moveCursor2Start();
+
+				emit sig_TypeFinished(this);
 			}
 			bool inputState() { return _ctrl.active(); }
 			short getDefaultPrinableLength() { 
@@ -88,24 +87,19 @@ namespace sweet {
 			short getDefaultPrinableHeight() { 
 				return this->boundingRect().width() - 2 * borderWidth(); 
 			}
-			size_t countLine() const { return _text.size(); }
 			//size_t charCountLine(size_t numOfLine) const { return _text[numOfLine].size(); }
 
 			virtual short identifier() { return 4; }
 			virtual void paint(Object* obj) {
-				short y = getPrintableY();
 				Frame::paint(obj);
-				showChar(L'1', Point(y++, getPrintableX()));
-				tool::GotoXY(getPrintableX(), y + 1);
-				showChar(L'2', Point(y + 2, getPrintableX()));
-
-				//for (std::wstring str : _textTable) {
-				//	tool::ConsoleShow(str, Point(y++, getPrintableX()), WHITE);
-				//	cursorGoDown(1);
-				//	moveCursor2Left();
-				//	//printf("%d\n", y);
-				//}
-				//printf("%ls\n", _text.c_str()
+				short y = getPrintableY(), x = getPrintableX();
+				for (auto str : _textTable) {
+					//tool::GotoXY(x, y);
+					if (y - getPrintableY() >= getDefaultPrinableHeight())
+						break;
+					tool::ConsoleShow(str, Point(x, y), WHITE);
+					y++;
+				}
 			}
 
 		protected:
@@ -126,7 +120,7 @@ namespace sweet {
 			// 显示字符
 			void showChar(wchar_t ch) {
 				tool::ConsoleShow(std::wstring(1, ch), _cursor, WHITE);
-				sig_TextChanged(this);
+				emit sig_TextChanged(this);
 				// 设置光标位置
 				applyCursor();
 			}
@@ -201,14 +195,6 @@ namespace sweet {
 				_cursor.setY(getPrintableY());
 				applyCursor();
 			}
-			// 取得最后一个字符
-			wchar_t getLastChar() {
-				return _text[_text.size() - 1];
-			}
-			// 移除最后一个字符
-			void removeLastChar() {
-				_text.erase((++_text.rbegin()).base());
-			}
 			// 得到当前行号
 			short getLineNumber() {
 				return _cursor.y() - getPrintableY();
@@ -216,6 +202,32 @@ namespace sweet {
 			// 得到当前列号
 			short getRowNumber() {
 				return _cursor.x() - getPrintableX();
+			}
+
+			void adaptRect(Object* obj, Rect old, Rect newR) {
+				if (_textTable.empty())
+					return;
+				short borderLen = borderWidth() * getCharWidth(border().chrs()->ex()) * 2;
+				short len = newR.length() - borderLen;
+
+				std::vector<std::wstring> _nTextTable;
+				std::wstring tmp;
+				for (auto str : _textTable) {
+					for (auto chr : str) {
+						if (tmp.length() < len) {
+							tmp += chr;
+						}
+						else {
+							_nTextTable.push_back(tmp);
+							tmp.clear();
+						}
+					}
+				}
+				if (!tmp.empty())
+					_nTextTable.push_back(tmp);
+				_textTable = _nTextTable;
+
+				refresh();
 			}
 			
 
@@ -257,16 +269,52 @@ namespace sweet {
 						putchar('\b');
 				}
 			}
+			void tab() {
+
+			}
+			void left() {
+
+			}
+			void right() {
+
+			}
+			void up() {
+
+			}
+			void down() {
+
+			}
 			// 追加显示下一个字符
 			// 返回true表示ch的字符宽可以追加（一般都是可打印字符）
 			bool showNextChar(wchar_t ch) {
 				// 退格键处理
-				if (ch == '\b') {
+				switch (ch) {
+				case '\b':
 					backSpace();
 					return false;
-				}
-				else if (ch == '\r') {
+
+				case '\r':
 					enter();
+					return false;
+
+				case '\t':
+					tab();
+					return false;
+					
+				case VK_UP:
+					up();
+					return false;
+
+				case VK_DOWN:
+					down();
+					return false;
+
+				case VK_LEFT:
+					left();
+					return false;
+
+				case VK_RIGHT:
+					right();
 					return false;
 				}
 				Point	p{ getPrintableCrood() };	// 得到打印的起始坐标

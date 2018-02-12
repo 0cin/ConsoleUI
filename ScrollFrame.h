@@ -52,11 +52,12 @@ namespace sweet {
 				Rect	rect = Rect(0, 0, 5, 5),						// ±ß½ç¾ØÐÎ
 				short	borderWidth = 1,								// ±ß¿ò¿í¶È
 				Bucket	border = Bucket(makeLpStream(L'*')),			// ±ß¿ò×Ö·ûÁ÷
+				Bucket  vBorder = Bucket(makeLpStream(L'*')),			// ÊúÁÐ±ß¿ò×Ö·ûÁ÷
 				Bucket	blank = Bucket(makeLpStream(L' ')),				// Ìî³ä×Ö·ûÁ÷
 				Pen		pen = Pen(makeLpStream(unsigned char(WHITE))),	// »­±Ê(ÑÕÉ«Á÷)
 				Pen		brush = Pen(makeLpStream(unsigned char(WHITE)))	// »­Ë¢(ÑÕÉ«Á÷)
 			)
-				: Frame(parent, rect, borderWidth, border, blank, pen, brush)
+				: Frame(parent, rect, borderWidth, border, vBorder, blank, pen, brush)
 				, _yScroller(nullptr)
 				, _xScroller(nullptr) {}
 
